@@ -1,9 +1,10 @@
-const express = require('express');
-const router = express.Namespace ? express.Namespace() : express.Router();
-const { createDeal, getSellerDeals } = require('../controllers/shared/dealController');
-const { protect } = require('../middlewares/protect');
+const express = require("express");
+const router = express.Router();
+const { protect } = require("../middlewares/protect");
+const { recordDeal, getSellerAnalytics, getBuyerAnalytics } = require("../controllers/dealsController");
 
-router.post('/', protect, createDeal);
-router.get('/seller', protect, getSellerDeals);
+router.post("/", protect, recordDeal);
+router.get("/analytics", protect, getSellerAnalytics);
+router.get("/buyer-analytics", protect, getBuyerAnalytics);
 
 module.exports = router;

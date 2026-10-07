@@ -25,7 +25,7 @@ const getChatHistory = async (user1, user2) => {
             { senderId: user1, receiverId: user2 },
             { senderId: user2, receiverId: user1 }
         ]
-    }).sort({ timestamp: -1 }); // Oldest first for chat window
+    }).sort({ timestamp: 1 }); // Oldest first for chat window
 };
 
 module.exports = { saveMessage, getRecentChatList, getChatHistory }

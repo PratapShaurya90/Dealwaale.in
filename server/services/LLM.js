@@ -3,11 +3,11 @@ const systemInstruction = require("./SystemPrompts/systemprompt.js");
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-const LLM = async (inputMessage) => {
+const LLM = async (inputMessage, customSystemInstruction) => {
     try {
         const model = genAI.getGenerativeModel({
-            model: "gemini-flash-latest",
-            systemInstruction: systemInstruction
+            model: "gemini-2.5-flash",
+            systemInstruction: customSystemInstruction || systemInstruction
         });
 
         const result = await model.generateContentStream(inputMessage);
@@ -20,4 +20,4 @@ const LLM = async (inputMessage) => {
     }
 };
 
-module.exports = LLM;
+module.exports = LLM;

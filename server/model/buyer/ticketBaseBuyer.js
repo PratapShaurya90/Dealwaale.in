@@ -45,8 +45,14 @@ const ticketBaseBuyer = new mongoose.Schema({
     city: {
         type: String,
         default: ""
+    },
+    productImages: {
+        type: [String],
+        default: []
     }
 
-})
+}, { timestamps: true })
+
+ticketBaseBuyer.index({ createdAt: 1 }, { expireAfterSeconds: 1814400 })
 
 module.exports = mongoose.model("TicketBaseBuyer", ticketBaseBuyer)

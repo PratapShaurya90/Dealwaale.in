@@ -6,7 +6,11 @@
   font-family: 'Inter', sans-serif;
 }
 
-h1, h2, h3, h4, .heading-font {
+h1,
+h2,
+h3,
+h4,
+.heading-font {
   font-family: 'Outfit', sans-serif;
 }
 
@@ -24,7 +28,7 @@ h1, h2, h3, h4, .heading-font {
   -webkit-text-fill-color: transparent;
 }
 
-.primaryColor{
+.primaryColor {
   background-color: rgb(0, 9, 0);
 }
 
@@ -43,6 +47,7 @@ h1, h2, h3, h4, .heading-font {
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -55,14 +60,17 @@ h1, h2, h3, h4, .heading-font {
 .cursive {
   font-family: 'Dancing Script', cursive;
 }
+
 /* The "Odd Shape" Liquid Animation */
 @keyframes morph {
   0% {
     border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
   }
+
   50% {
     border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%;
   }
+
   100% {
     border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
   }
@@ -99,7 +107,9 @@ body {
 }
 
 /* Re-enable selection for inputs so users can still type and copy messages */
-input, textarea, [contenteditable="true"] {
+input,
+textarea,
+[contenteditable="true"] {
   user-select: text;
   -webkit-user-select: text;
   -moz-user-select: text;
@@ -108,7 +118,8 @@ input, textarea, [contenteditable="true"] {
 
 /* FIX: Remove default Blue Shade on Text Selection & Focus Outlines */
 ::selection {
-  background-color: #064e3b; /* Premium Emerald-900 */
+  background-color: #064e3b;
+  /* Premium Emerald-900 */
   color: white;
 }
 

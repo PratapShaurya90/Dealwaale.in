@@ -1,14 +1,14 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const dealSchema = new mongoose.Schema({
     sellerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: "User",
         required: true
     },
     buyerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
+        ref: "User",
         required: true
     },
     productName: {
@@ -19,26 +19,30 @@ const dealSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    costPrice: {
+        type: Number,
+        required: true
+    },
     units: {
+        type: Number,
+        required: true
+    },
+    revenue: {
+        type: Number,
+        required: true
+    },
+    profit: {
         type: Number,
         required: true
     },
     city: {
         type: String,
-        required: true
+        default: "Unknown"
     },
     category: {
-        type: String
-    },
-    status: {
         type: String,
-        enum: ['completed', 'pending'],
-        default: 'completed'
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
+        default: "General"
     }
-});
+}, { timestamps: true });
 
-module.exports = mongoose.model('Deal', dealSchema);
+module.exports = mongoose.model("Deal", dealSchema);

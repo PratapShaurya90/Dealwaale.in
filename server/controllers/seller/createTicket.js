@@ -2,7 +2,7 @@ const TicketBase = require("../../model/seller/ticketBase")
 
 const createTicket = async (req, res) => {
     try {
-        const { companyName, productType, productName, productImages, companyLocation, pricePerProduct, phoneNumber, email, supplyType } = req.body
+        const { companyName, productType, productName, productImages, companyLocation, pricePerProduct, phoneNumber, email, supplyType, units, city } = req.body
         if(!companyName || !productType || !productName || !productImages || !companyLocation || !pricePerProduct || !phoneNumber || !supplyType){
             return res.status(400).json(
                 {
@@ -21,7 +21,9 @@ const createTicket = async (req, res) => {
             pricePerProduct,
             phoneNumber,
             email,
-            supplyType
+            supplyType,
+            units: units || 0,
+            city: city || companyLocation
         })
 
         res.status(200).json(

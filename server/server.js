@@ -43,14 +43,15 @@ const buyerRoutes = require("./routes/buyerRoutes");
 const aiRoutes = require("./routes/ai");
 const chatRoutes = require("./routes/chatRoutes");
 const uploadRoutes = require("./routes/uploadRoutes");
+const dealRoutes = require("./routes/dealRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/seller", sellerRoutes);
 app.use("/api/buyer", buyerRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/chat", chatRoutes);
-app.use('/api/deals', require('./routes/dealRoutes'));
 app.use("/api/upload", uploadRoutes);
+app.use("/api/deals", dealRoutes);
 
 const PORT = process.env.PORT || 5000;
 

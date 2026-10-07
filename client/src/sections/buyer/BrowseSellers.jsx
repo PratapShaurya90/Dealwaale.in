@@ -144,43 +144,36 @@ const BrowseSellers = () => {
                     </div>
                 ) : (
                     dealers.map((dealer) => (
-                        <div key={dealer._id} className="w-full bg-white rounded-xl  border-2 border-neutral-300 flex flex-col md:flex-row overflow-hidden  transition-all duration-300 group">
+                        <div key={dealer._id} className="w-full bg-gradient-to-r from-white to-yellow-50/80 hover:to-yellow-100/80 rounded-xl border-2 border-neutral-300 flex flex-col md:flex-row overflow-hidden transition-all duration-300 group relative">
                             {/* Left Section (The Ticket Info) */}
                             <div className="flex-1 flex-col   flex p-6  gap-3">
                                 <div className="w-full gap-3 ">
-                                    <div className="flex items-center gap-4 flex-wrap">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="text-2xl font-bold text-neutral-900 uppercase tracking-tight">{dealer.username}</h3>
-                                            {dealer.subscriptionType === 'pro' && (
-                                                <span className="flex items-center gap-1 bg-yellow-400/20 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border border-yellow-400/30">
-                                                    <FaStar className="text-[8px]" /> Verified
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h3 className="text-2xl font-bold text-neutral-900 uppercase tracking-tight">{dealer.username}</h3>
+                                        {dealer.subscriptionType === 'pro' && (
+                                            <span className="flex items-center gap-1 bg-yellow-400/20 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border border-yellow-400/30">
+                                                <FaStar className="text-[8px]" /> Verified
+                                            </span>
+                                        )}
+                                        <span className="px-3 py-1 bg-neutral-50 border border-neutral-200 rounded-lg text-[10px] font-bold text-neutral-600 uppercase tracking-wide">
+                                            {dealer.profession}
+                                        </span>
+                                        {dealer.categories && dealer.categories.length > 0 && (
+                                            dealer.categories.map((cat, idx) => (
+                                                <span key={idx} className="px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
+                                                    {cat}
                                                 </span>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            {dealer.categories && dealer.categories.length > 0 ? (
-                                                dealer.categories.map((cat, idx) => (
-                                                    <span key={idx} className="px-3 py-1 bg-neutral-50 border border-neutral-200 rounded-lg text-[10px] font-bold text-neutral-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all duration-300 uppercase tracking-wide">
-                                                        {cat}
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className="px-3 py-1 bg-neutral-50 border border-neutral-200 rounded-lg text-[10px] font-bold text-neutral-600 uppercase tracking-wide">
-                                                    {dealer.profession}
-                                                </span>
-                                            )}
-                                        </div>
+                                            ))
+                                        )}
                                     </div>
                                     <div>
-                                        <span className="font-light text-gray-400">{dealer.role} X </span>
-                                        <span className="font-light text-gray-400">{dealer.profession}</span>
-
+                                        <span className="font-light text-gray-400 capitalize">{dealer.role}</span>
                                     </div>
 
                                 </div>
                                 <div>
-                                    <p className="text-neutral-600 font-normal mx-2 line-clamp-3">
-                                        {dealer.about || "This seller hasn't provided an introduction yet. Connect to learn more about their offerings and expertise."}
+                                    <p className="text-neutral-600 font-normal mx-2 line-clamp-3 whitespace-pre-wrap">
+                                        {dealer.about || "This seller hasn't provided a business introduction yet. Connect to learn more about their offerings and expertise."}
                                     </p>
                                 </div>
 
@@ -189,10 +182,6 @@ const BrowseSellers = () => {
                                     <div className="flex items-center gap-1.5 text-neutral-500 text-sm">
                                         <span className="font-semibold text-neutral-400">City:</span>
                                         <span className="text-neutral-700 font-medium">{dealer.city}</span>
-                                        <span className="text-neutral-300 font-bold mx-2">•</span>
-
-                                        <label htmlFor="" className="font-semibold text-neutral-400">Phone:</label>
-                                        <span className="text-neutral-700 font-medium">{dealer.phone}</span>
                                         <span className="text-neutral-300 font-bold mx-2">•</span>
 
                                         <label htmlFor="" className="font-semibold text-neutral-400">Email:</label>
@@ -242,7 +231,7 @@ const BrowseSellers = () => {
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="w-1/2 h-1/2 p-8 bg-white rounded-md shadow-xl flex flex-col gap-4">
                         <h1 className="text-2xl font-bold text-emerald-950">Star Sellers</h1>
-                        <p className="text-gray-600">Upgrade to view our premium verified sellers and exclusive offers.</p>
+                        <p className="text-gray-600">Upgrade to view our premium certified sellers and exclusive offers.</p>
 
                         <div className="flex flex-col gap-2">
                             <button className="w-full py-3 font-bold bg-emerald-950 text-white rounded-md hover:bg-emerald-800 transition-all" onClick={() => {

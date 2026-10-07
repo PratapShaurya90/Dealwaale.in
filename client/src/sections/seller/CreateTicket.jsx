@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { FaArrowRight } from "react-icons/fa6";
+import { useNavigate } from "react-router-dom";
 import axios from 'axios';
+import toast from 'react-hot-toast';
 
 const CreateTicket = () => {
+  const navigate = useNavigate();
   const [sucess, setSucess] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,6 +21,8 @@ const CreateTicket = () => {
     phoneNumber: '',
     email: '',
     supplyType: 'On Demand',
+    units: '',
+    city: '',
   })
 
   const handleChange = async (e) => {
@@ -70,9 +75,25 @@ const CreateTicket = () => {
       }
 
       setSucess(true);
+      toast.success("Ticket has been created successfully!");
+      setForm({
+        companyName: '',
+        productType: '',
+        productName: '',
+        productImages: [],
+        companyLocation: '',
+        pricePerProduct: '',
+        phoneNumber: '',
+        email: '',
+        supplyType: 'On Demand',
+        units: '',
+        city: '',
+      });
+      setImageFileNames([]);
 
     } catch (error) {
       setError(error.message);
+      toast.error("Failed to create ticket.");
     } finally {
       setLoading(false);
     }
@@ -169,7 +190,22 @@ const CreateTicket = () => {
                 name="companyLocation"
                 value={form.companyLocation}
                 onChange={handleChange}
-                placeholder="City, State"
+                placeholder="State, Country"
+                className={inputClass}
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-gray-600">
+                City <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="city"
+                value={form.city}
+                onChange={handleChange}
+                placeholder="Enter city"
                 className={inputClass}
                 required
               />
@@ -277,6 +313,21 @@ const CreateTicket = () => {
 
             <div className="flex flex-col gap-1.5">
               <label className="text-xs font-medium text-gray-600">
+                Total Units <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                name="units"
+                value={form.units}
+                onChange={handleChange}
+                placeholder="Enter available quantity"
+                className={inputClass}
+                required
+              />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-gray-600">
                 Phone Number <span className="text-red-500">*</span>
               </label>
               <input
@@ -324,7 +375,10 @@ const CreateTicket = () => {
 
       {/* ── Your Tickets ── */}
       <div className="w-full h-auto flex justify-end">
-        <button className="w-auto px-8 flex h-14 items-center gap-2 bg-emerald-950 text-white rounded-md hover:bg-emerald-800 transition-all cursor-pointer">
+        <button 
+          onClick={() => navigate('/seller/mytickets')}
+          className="w-auto px-8 flex h-14 items-center gap-2 bg-emerald-950 text-white rounded-md hover:bg-emerald-800 transition-all cursor-pointer"
+        >
           View Your Tickets <FaArrowRight />
         </button>
       </div>

@@ -19,6 +19,7 @@ const Chat = () => {
     const [dealData, setDealData] = useState({
         productName: "",
         price: "",
+        costPrice: "",
         units: ""
     });
     const [savingDeal, setSavingDeal] = useState(false);
@@ -90,6 +91,18 @@ const Chat = () => {
         aiScrollRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [aiMessages]);
 
+    const renderMarkdown = (text) => {
+        const parts = text.split(/(\*\*[^*]+\*\*)/g);
+        return parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={i}>{part.slice(2, -2)}</strong>;
+            }
+            return part.split('\n').map((line, j, arr) => (
+                <span key={`${i}-${j}`}>{line}{j < arr.length - 1 ? <br /> : null}</span>
+            ));
+        });
+    };
+
     const handleSend = (e) => {
         e.preventDefault();
         if (!input.trim()) return;
@@ -124,7 +137,6 @@ const Chat = () => {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
 
-            // Add a placeholder message for the AI
             setAiMessages((prev) => [...prev, { role: "ai", content: "" }]);
             setLoadingAI(false);
 
@@ -144,7 +156,7 @@ const Chat = () => {
 
         } catch (error) {
             console.error("AI Chat Error:", error);
-            setAiMessages((prev) => [...prev, { role: "ai", content: "Sorry, I'm having trouble connecting to my brain right now." }]);
+            setAiMessages((prev) => [...prev, { role: "ai", content: "Sorry, I'm having trouble connecting right now." }]);
             setLoadingAI(false);
         }
     };
@@ -154,9 +166,10 @@ const Chat = () => {
         setSavingDeal(true);
         try {
             await axios.post("http://localhost:5000/api/deals", {
-                buyerId: partnerId,
+                partnerId: partnerId,
                 productName: dealData.productName,
                 price: Number(dealData.price),
+                costPrice: Number(dealData.costPrice || 0),
                 units: Number(dealData.units),
                 city: partnerInfo?.city || "Unknown",
                 category: partnerInfo?.categories?.[0] || "General"
@@ -175,9 +188,8 @@ const Chat = () => {
     };
 
     const handleBackClick = () => {
-        // Only ask to record deal if messages exist and we are a seller
-        const user = JSON.parse(localStorage.getItem("User"));
-        if (messages.length > 0 && user?.role === 'seller') {
+        // Only ask to record deal if messages exist
+        if (messages.length > 0) {
             setShowDealModal(true);
         } else {
             navigate(-1);
@@ -194,8 +206,8 @@ const Chat = () => {
             >
                 <div onMouseDown={startResizing} className="absolute right-0 top-0 w-1.5 h-full cursor-col-resize z-50 hover:bg-emerald-500 active:bg-emerald-600 transition-colors" />
 
-                <div className="w-full h-auto border-b border-gray-400 p-5 flex items-center justify-center">
-                    <p className="text-gray-950 text-md italic cursive">AI Assistant</p>
+                <div className="w-full h-auto p-5 flex items-center justify-center">
+                    <p className="text-gray-950 text-xl italic cursive">AI Assistant</p>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 ">
@@ -210,10 +222,10 @@ const Chat = () => {
                         aiMessages.map((m, i) => (
                             <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                                 <div className={`max-w-[85%] px-4 py-2 text-sm ${m.role === "user"
-                                        ? "bg-green-950 text-white font-medium rounded-2xl"
-                                        : "bg-white font-medium text-black rounded-xl"
+                                    ? "bg-green-950 text-white font-medium rounded-2xl"
+                                    : "bg-white font-medium text-black rounded-xl"
                                     }`}>
-                                    {m.content}
+                                    {m.role === 'ai' ? renderMarkdown(m.content) : m.content}
                                 </div>
                             </div>
                         ))
@@ -229,11 +241,11 @@ const Chat = () => {
                     <div ref={aiScrollRef} />
                 </div>
 
-                <div className="w-full p-4 border-t border-gray-100">
+                <div className="w-full  p-4 border-t border-black">
                     <form onSubmit={handleAiSend} className="w-full flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded-xl px-3 py-1.5">
                         <textarea
                             placeholder="Ask AI anything..."
-                            className="flex-1 bg-transparent text-sm text-gray-800 outline-none py-1.5 resize-none h-12 scrollbar-hide"
+                            className="flex-1 h-28 bg-transparent text-sm text-gray-800 outline-none py-1.5 resize-none h-12 scrollbar-hide"
                             value={aiInput}
                             onChange={(e) => setAiInput(e.target.value)}
                             onFocus={() => setBack(false)}
@@ -257,17 +269,16 @@ const Chat = () => {
             </div>
 
             {/* Main Chat: User to User */}
-            <div className="flex-1 h-full flex flex-col relative" style={{ backgroundColor: "#efeae2", backgroundImage: `url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')`, backgroundBlendMode: "multiply", backgroundSize: "400px", opacity: "0.9" }}>
+            <div className="flex-1 h-full flex flex-col relative" style={{ backgroundColor: "#d9f99d", backgroundImage: `url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')`, backgroundBlendMode: "multiply", backgroundSize: "400px", opacity: "0.9" }}>
                 <div className="p-4 flex items-center gap-4 bg-white/90 backdrop-blur-md justify-between border-b border-neutral-200 z-10">
                     <div className="flex items-center gap-2">
                         <button onClick={handleBackClick} className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
                             <FiArrowLeft size={20} className="text-neutral-700" />
                         </button>
-                        <span className="text-emerald-950 font-black uppercase tracking-widest text-[10px]">Back</span>
+                        <span className="text-black text-lg font-semibold">Back</span>
                     </div>
                     <div className="flex justify-center items-center gap-2">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                        <p className="text-emerald-950 text-sm font-black uppercase tracking-tight">
+                        <p className="text-emerald-950 text-sm font-black capitalize">
                             {partnerInfo ? partnerInfo.username : "Connecting..."}
                         </p>
                     </div>
@@ -314,56 +325,66 @@ const Chat = () => {
             {/* Deal Recording Modal */}
             {showDealModal && (
                 <div className="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-neutral-200">
+                    <div className="bg-white w-[25vw] rounded shadow-2xl  overflow-hidden border border-neutral-200">
                         <div className="bg-neutral-50 p-6 border-b border-neutral-200 text-center">
-                            <h3 className="text-sm font-black uppercase tracking-widest text-emerald-950">Record Transaction?</h3>
-                            <p className="text-[10px] font-bold text-neutral-400 mt-1 uppercase">Log this deal in your financial ledger</p>
+                            <h3 className="text-2xl text-black font-bold capitalize text-emerald-950">Record Transaction?</h3>
+                            <p className="text-[10px] font-bold text-black mt-1 capitalize">Log this deal in your financial ledger</p>
                         </div>
                         <form onSubmit={handleSaveDeal} className="p-6 space-y-4">
                             <div className="space-y-1">
-                                <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Product Name</label>
-                                <input 
-                                    type="text" 
+                                <label className="text-[15px] text-black font-bold capitalize">Product Name</label>
+                                <input
+                                    type="text"
                                     required
                                     className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-neutral-900"
                                     value={dealData.productName}
-                                    onChange={(e) => setDealData({...dealData, productName: e.target.value})}
+                                    onChange={(e) => setDealData({ ...dealData, productName: e.target.value })}
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-3 gap-3">
                                 <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Price (per unit)</label>
-                                    <input 
-                                        type="number" 
+                                    <label className="text-[15px] text-black font-bold capitalize">Selling Price</label>
+                                    <input
+                                        type="number"
                                         required
                                         className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-neutral-900"
                                         value={dealData.price}
-                                        onChange={(e) => setDealData({...dealData, price: e.target.value})}
+                                        onChange={(e) => setDealData({ ...dealData, price: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Total Units</label>
-                                    <input 
-                                        type="number" 
+                                    <label className="text-[15px] text-black font-bold capitalize">Cost Price</label>
+                                    <input
+                                        type="number"
+                                        required
+                                        className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-neutral-900"
+                                        value={dealData.costPrice}
+                                        onChange={(e) => setDealData({ ...dealData, costPrice: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[15px] text-black font-bold capitalize">Total Units</label>
+                                    <input
+                                        type="number"
                                         required
                                         className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-neutral-900"
                                         value={dealData.units}
-                                        onChange={(e) => setDealData({...dealData, units: e.target.value})}
+                                        onChange={(e) => setDealData({ ...dealData, units: e.target.value })}
                                     />
                                 </div>
                             </div>
                             <div className="flex flex-col gap-2 pt-2">
-                                <button 
+                                <button
                                     type="submit"
                                     disabled={savingDeal}
-                                    className="w-full py-3 bg-neutral-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 disabled:opacity-50"
+                                    className="w-full py-3 bg-neutral-900 text-white rounded-xl text-[15px] text-black font-bold capitalize hover:bg-neutral-800 disabled:opacity-50"
                                 >
                                     {savingDeal ? "Recording..." : "Save Entry"}
                                 </button>
-                                <button 
+                                <button
                                     type="button"
                                     onClick={() => navigate(-1)}
-                                    className="w-full py-3 text-neutral-400 text-[10px] font-black uppercase tracking-widest hover:text-neutral-900"
+                                    className="w-full py-3 text-[15px] text-black font-bold capitalize hover:text-neutral-900"
                                 >
                                     Skip & Exit
                                 </button>

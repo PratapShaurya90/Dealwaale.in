@@ -12,6 +12,8 @@ const QuickSellers = () => {
     const [totalPages, setTotalPages] = useState(1)
     const [total, setTotal] = useState(0)
     const [isPopUpOpen, setIsPopUpOpen] = useState(false)
+    const [selectedImage, setSelectedImage] = useState(null)
+    const [expandedDealId, setExpandedDealId] = useState(null)
     const [filters, setFilters] = useState({
         search: "",
         minPrice: "",
@@ -27,7 +29,7 @@ const QuickSellers = () => {
         "Pharmacy & Healthcare", "Furniture & Home Decor", "Jewelry", "Stationery & Gifts"
     ];
 
-    const supplyTypes = ["Wholesale", "Retail", "Manufacturer", "Distributor"];
+    const supplyTypes = ["quick supply", "on demand", "Manufacturer", "Distributor"];
 
     const indianCities = [
         "Agra", "Ahmedabad", "Allahabad", "Amritsar", "Aurangabad", "Bangalore", 
@@ -81,7 +83,7 @@ const QuickSellers = () => {
         <div className="flex w-full flex-col gap-6 px-2 relative">
 
             {/* Header */}
-            <div className="w-full sticky top-0 z-50">
+            <div className="w-full mb-4">
                 <h1 className="text-8xl font-extrabold uppercase">Quick Sellers</h1>
                 <p className="text-xl font-medium">Connect With India's Largest Wholesale Offers — Fast and Quick</p>
             </div>
@@ -220,7 +222,10 @@ const QuickSellers = () => {
                         <div key={ticket._id} className="w-full bg-white rounded-2xl border-2 border-neutral-300 flex flex-col md:flex-row overflow-hidden hover:border-emerald-600 transition-all duration-300 group">
 
                             {/* Left — Ticket Info */}
-                            <div className="flex-1 p-6 flex flex-col gap-4">
+                            <div 
+                                className="flex-1 p-6 flex flex-col gap-4 cursor-pointer"
+                                onClick={() => setExpandedDealId(prev => prev === ticket._id ? null : ticket._id)}
+                            >
 
                                 {/* Header Row */}
                                 <div className="flex items-center gap-4 flex-wrap">
@@ -253,6 +258,25 @@ const QuickSellers = () => {
                                     </div>
                                 </div>
 
+                                {/* Image Carousel (Accordion) */}
+                                {ticket.productImages && ticket.productImages.length > 0 && (
+                                    <div 
+                                        className={`transition-all duration-300 overflow-hidden ${expandedDealId === ticket._id ? 'max-h-64 opacity-100 mt-2' : 'max-h-0 opacity-0'}`}
+                                    >
+                                        <div className="flex items-center gap-3 overflow-x-auto pb-2 snap-x hide-scrollbar">
+                                            {ticket.productImages.map((img, idx) => (
+                                                <div 
+                                                    key={idx} 
+                                                    className="relative w-32 h-32 sm:w-40 sm:h-40 rounded-xl overflow-hidden border border-neutral-200 shadow-sm shrink-0 snap-center hover:border-emerald-500 cursor-pointer transition-colors"
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedImage(img); }}
+                                                >
+                                                    <img src={img} alt="Product" className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Details Row */}
                                 <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-neutral-500">
                                     <div className="flex items-center gap-1.5 bg-neutral-50 px-3 py-1.5 rounded-lg border border-neutral-100">
@@ -267,6 +291,12 @@ const QuickSellers = () => {
                                         <span className="text-yellow-600 font-bold uppercase text-[9px] tracking-widest">Phone:</span>
                                         <span className="text-neutral-900 font-bold">{ticket.phoneNumber}</span>
                                     </div>
+                                    {ticket.email && (
+                                        <div className="flex items-center gap-1.5 bg-neutral-50 px-3 py-1.5 rounded-lg border border-neutral-100">
+                                            <span className="text-yellow-600 font-bold uppercase text-[9px] tracking-widest">Email:</span>
+                                            <span className="text-neutral-900 font-bold">{ticket.email}</span>
+                                        </div>
+                                    )}
                                 </div>
 
                             </div>
@@ -330,7 +360,7 @@ const QuickSellers = () => {
 
             {/* Star Sellers Popup */}
             {isPopUpOpen && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[200]">
                     <div className="max-w-md w-full p-8 bg-white rounded-xl shadow-xl flex flex-col gap-4">
                         <h1 className="text-2xl font-bold text-emerald-950">Star Offers</h1>
                         <p className="text-gray-500 text-sm">Upgrade to see premium verified wholesale offers and priority listings.</p>
@@ -339,6 +369,26 @@ const QuickSellers = () => {
                             <button className="w-full py-3 font-bold border border-emerald-950 text-emerald-950 rounded-xl hover:bg-gray-50 transition" onClick={() => setIsPopUpOpen(false)}>Close</button>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Image Full View Modal */}
+            {selectedImage && (
+                <div 
+                    className="fixed inset-0 bg-black/90 z-[300] flex justify-center items-center p-4 cursor-pointer backdrop-blur-sm"
+                    onClick={() => setSelectedImage(null)}
+                >
+                    <img 
+                        src={selectedImage} 
+                        className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl" 
+                        alt="Full size view" 
+                    />
+                    <button 
+                        className="absolute top-6 right-6 text-white bg-white/20 hover:bg-white/40 rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl transition"
+                        onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+                    >
+                        ✕
+                    </button>
                 </div>
             )}
 

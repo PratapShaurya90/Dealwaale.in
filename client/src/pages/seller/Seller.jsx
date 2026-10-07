@@ -5,8 +5,9 @@ import BrowseDealer from "../../sections/seller/BrowseDealer"
 import QuickDeals from "../../sections/seller/QuickDeals"
 import CreateTicket from "../../sections/seller/CreateTicket"
 import RecentChat from "../../sections/seller/RecentChat"
-import FinancialDashboard from "../../sections/seller/FinancialDashboard"
 import Profile from "../../sections/shared/Profile"
+import MyTickets from "../../sections/seller/MyTickets"
+import FinancialDashboard from "../../sections/seller/FinancialDashboard"
 import { useState } from "react";
 
 const Seller = () => {
@@ -17,8 +18,9 @@ const Seller = () => {
     const isQuickDeals = pathname.includes("/quickdeals")
     const isCreateTicket = pathname.includes("/createticket")
     const isRecentChat = pathname.includes("/recentchat")
-    const isFinancialDashboard = pathname.includes("/financialdashboard")
     const isProfile = pathname.includes("/profile")
+    const isMyTickets = pathname.includes("/mytickets")
+    const isFinancialDashboard = pathname.includes("/financialdashboard")
 
     return (
         <div className="w-full min-h-screen text-black flex">
@@ -34,14 +36,14 @@ const Seller = () => {
                 </div>
 
                 <div className="p-8 flex-1 w-full overflow-y-auto">
-                    {!isBrowseDealer && !isQuickDeals && !isCreateTicket && !isRecentChat && !isFinancialDashboard && !isProfile && <BrowseDealer />}
+                    {!isBrowseDealer && !isQuickDeals && !isCreateTicket && !isRecentChat && !isProfile && !isMyTickets && !isFinancialDashboard && <BrowseDealer />}
                     {isBrowseDealer && <BrowseDealer />}
                     {isQuickDeals && <QuickDeals />}
                     {isCreateTicket && <CreateTicket />}
                     {isRecentChat && <RecentChat />}
-                    {isFinancialDashboard && <FinancialDashboard />}
                     {isProfile && <Profile />}
-
+                    {isMyTickets && <MyTickets />}
+                    {isFinancialDashboard && <FinancialDashboard />}
                     
                 </div>
             </div>

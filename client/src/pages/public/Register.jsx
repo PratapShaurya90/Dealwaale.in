@@ -43,6 +43,19 @@ const Register = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [customCategory, setCustomCategory] = useState("")
+
+  const handleAddCustomCategory = (e) => {
+    e.preventDefault();
+    const trimmed = customCategory.trim();
+    if (trimmed && !formData.categories.includes(trimmed)) {
+      setFormData(prev => ({
+        ...prev,
+        categories: [...prev.categories, trimmed]
+      }));
+      setCustomCategory("");
+    }
+  }
 
   const handleChange = (e) => {
     setFormData(prev => ({
@@ -158,17 +171,30 @@ const Register = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input name="city" onChange={handleChange} value={formData.city} placeholder="City" className="input" />
-              <input name="profession" onChange={handleChange} value={formData.profession} placeholder="Profession" className="input" />
+              <select
+                name="profession"
+                value={formData.profession}
+                onChange={handleChange}
+                className="input bg-black text-white border border-neutral-700"
+              >
+                <option value="" disabled className="bg-black text-neutral-500">Select Profession</option>
+                <option value="Retailer" className="bg-black text-white">Retailer</option>
+                <option value="Wholesaler" className="bg-black text-white">Wholesaler</option>
+                <option value="Distributor" className="bg-black text-white">Distributor</option>
+                <option value="Manufacturer" className="bg-black text-white">Manufacturer</option>
+                <option value="Professional" className="bg-black text-white">Professional</option>
+                <option value="Other" className="bg-black text-white">Other</option>
+              </select>
             </div>
 
             <select
               name="role"
               value={formData.role}
               onChange={handleChange}
-              className="input bg-black/90 text-white"
+              className="input bg-black text-white border border-neutral-700"
             >
-              <option value="buyer">Buyer</option>
-              <option value="seller">Seller</option>
+              <option value="buyer" className="bg-black text-white">Buyer</option>
+              <option value="seller" className="bg-black text-white">Seller</option>
             </select>
 
             <div className="space-y-3">
@@ -187,6 +213,41 @@ const Register = () => {
                     {cat}
                   </div>
                 ))}
+                
+                {/* Custom selected categories */}
+                {formData.categories
+                  .filter(cat => !industryCategories.includes(cat))
+                  .map(cat => (
+                    <div 
+                      key={cat}
+                      onClick={() => handleCategoryToggle(cat)}
+                      className="cursor-pointer px-3 py-2 rounded-md border text-xs transition-all bg-white text-black border-white"
+                    >
+                      {cat} ✕
+                    </div>
+                  ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  value={customCategory}
+                  onChange={(e) => setCustomCategory(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddCustomCategory(e);
+                    }
+                  }}
+                  placeholder="Other category? Type and press enter"
+                  className="input flex-1 text-sm bg-transparent border border-neutral-700 text-white rounded-md px-3 py-2"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomCategory}
+                  className="px-4 py-2 bg-neutral-800 text-white font-medium rounded-md text-sm border border-neutral-700 hover:bg-neutral-700 transition"
+                >
+                  Add
+                </button>
               </div>
             </div>
 

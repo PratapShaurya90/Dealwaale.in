@@ -38,7 +38,7 @@ const quickBuys = async (req, res) => {
     }
 
     try {
-        const ticket = await TicketBaseBuyers.find(query).select('userId companyName productType productName companyLocation pricePerProduct supplyType phoneNumber units city').sort({ createdAt: -1 }).limit(limit).skip(skip)
+        const ticket = await TicketBaseBuyers.find(query).select('userId companyName productType productName companyLocation pricePerProduct supplyType phoneNumber units city productImages').sort({ createdAt: -1 }).limit(limit).skip(skip)
         const total = await TicketBaseBuyers.countDocuments(query)
 
         if(total === 0) {

@@ -1,201 +1,361 @@
-import { useState, useEffect } from "react"
-import axios from "axios"
-import { FaChartLine, FaMapMarkerAlt, FaCalendarAlt, FaTable } from "react-icons/fa"
+import { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import Image from "../../assets/Backsgreene.png";
 
 const FinancialDashboard = () => {
+    const [timeframe, setTimeframe] = useState('1m');
+    const [page, setPage] = useState(1);
+    const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [deals, setDeals] = useState([]);
-    const [stats, setStats] = useState({
-        totalRevenue: 0,
-        totalUnits: 0,
-        dealCount: 0,
-        avgValue: 0
-    });
-    const [regionalData, setRegionalData] = useState([]);
+    const [showChatbot, setShowChatbot] = useState(false);
+    const [aiMessages, setAiMessages] = useState([]);
+    const [aiInput, setAiInput] = useState('');
+    const [loadingAI, setLoadingAI] = useState(false);
+    const aiScrollRef = useRef();
 
-    useEffect(() => {
-        const fetchDeals = async () => {
-            try {
-                const res = await axios.get("http://localhost:5000/api/deals/seller", {
-                    headers: { Authorization: `Bearer ${localStorage.getItem("Token")}` }
-                });
-                const fetchedDeals = res.data.deals;
-                setDeals(fetchedDeals);
-
-                // Calculate Stats
-                const revenue = fetchedDeals.reduce((acc, d) => acc + (d.price * d.units), 0);
-                const units = fetchedDeals.reduce((acc, d) => acc + d.units, 0);
-                setStats({
-                    totalRevenue: revenue,
-                    totalUnits: units,
-                    dealCount: fetchedDeals.length,
-                    avgValue: fetchedDeals.length > 0 ? (revenue / fetchedDeals.length).toFixed(0) : 0
-                });
-
-                // Regional Analysis (Last 2 Months)
-                const regionMap = {};
-                fetchedDeals.forEach(d => {
-                    regionMap[d.city] = (regionMap[d.city] || 0) + (d.price * d.units);
-                });
-                const sortedRegions = Object.entries(regionMap)
-                    .map(([city, val]) => ({ city, val }))
-                    .sort((a, b) => b.val - a.val);
-                setRegionalData(sortedRegions);
-
-            } catch (err) {
-                console.error("Error fetching deals:", err);
-            } finally {
-                setLoading(false);
+    const renderMarkdown = (text) => {
+        const parts = text.split(/(\*\*[^*]+\*\*)/g);
+        return parts.map((part, i) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+                return <strong key={i}>{part.slice(2, -2)}</strong>;
             }
-        };
-        fetchDeals();
-    }, []);
+            return part.split('\n').map((line, j, arr) => (
+                <span key={`${i}-${j}`}>{line}{j < arr.length - 1 ? <br /> : null}</span>
+            ));
+        });
+    };
 
-    if (loading) return <div className="p-8 text-xs font-bold text-neutral-400">LOADING FINANCIAL DATA...</div>;
+    const fetchAnalytics = async () => {
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('Token');
+            const res = await axios.get(`http://localhost:5000/api/deals/analytics?timeframe=${timeframe}&page=${page}&limit=10`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setData(res.data);
+        } catch (error) {
+            console.error('Error fetching analytics', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => { fetchAnalytics(); }, [timeframe, page]);
+    useEffect(() => { aiScrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [aiMessages]);
+
+    const handleAiSend = async (e) => {
+        e.preventDefault();
+        if (!aiInput.trim()) return;
+        const userMsg = { role: 'user', content: aiInput };
+        const newMessages = [...aiMessages, userMsg];
+        setAiMessages(newMessages);
+        setAiInput('');
+        setLoadingAI(true);
+        try {
+            const response = await fetch('http://localhost:5000/api/ai/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    messages: newMessages,
+                    systemInstruction: "You are a highly analytical AI Financial Assistant for a B2B platform seller. The user will ask you about their revenue, units sold, and profit data. Calculate mathematically when requested. Be concise, professional, and focus purely on the financial data facts. Provide simple, easy-to-read numbers. FORMATTING RULE: Do not use markdown like asterisks (**). Format using clean line breaks and bullet points (-) for readability."
+                })
+            });
+            if (!response.ok) throw new Error('Failed');
+            
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            setAiMessages(prev => [...prev, { role: 'ai', content: '' }]);
+            setLoadingAI(false);
+            let acc = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                acc += decoder.decode(value, { stream: true });
+                setAiMessages(prev => {
+                    const last = prev[prev.length - 1];
+                    return [...prev.slice(0, -1), { ...last, content: acc }];
+                });
+            }
+        } catch {
+            setAiMessages(prev => [...prev, { role: 'ai', content: 'Error connecting to AI.' }]);
+            setLoadingAI(false);
+        }
+    };
+
+    const timeFilters = [
+        { label: '1D', value: '1d' },
+        { label: '5D', value: '5d' },
+        { label: '10D', value: '10d' },
+        { label: '1M', value: '1m' },
+        { label: '3M', value: '3m' },
+        { label: '1Y', value: '1y' },
+    ];
+
+    const metrics = [
+        { label: 'Units Sold', value: data?.metrics?.totalUnits ?? 0, fmt: v => v.toLocaleString(), tag: 'TOTAL' },
+        { label: 'Revenue', value: data?.metrics?.totalRevenue ?? 0, fmt: v => `₹${v.toLocaleString()}`, tag: 'GROSS' },
+        { label: 'Profit', value: data?.metrics?.totalProfit ?? 0, fmt: v => `₹${v.toLocaleString()}`, tag: 'NET' },
+        { label: 'Loss', value: data?.metrics?.totalLoss ?? 0, fmt: v => `₹${v.toLocaleString()}`, tag: 'NET' },
+    ];
+
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (active && payload && payload.length) {
+            return (
+                <div style={{ border: '1px solid #e5e5e5', background: '#fff', padding: '12px 16px', fontSize: 11, fontFamily: 'inherit' }}>
+                    <p style={{ color: '#888', marginBottom: 6, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</p>
+                    {payload.map(p => (
+                        <p key={p.dataKey} style={{ color: '#111', fontWeight: 600 }}>
+                            {p.name}: ₹{Number(p.value).toLocaleString()}
+                        </p>
+                    ))}
+                </div>
+            );
+        }
+        return null;
+    };
 
     return (
-        <div className="bg-[#fcfcfc] min-h-screen p-4 text-neutral-800 font-sans">
-            
-            {/* Header / Filter Bar */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-neutral-200">
-                <div className="flex items-center gap-4">
-                    <h1 className="text-sm font-black uppercase tracking-tighter">Financial Ledger</h1>
-                    <span className="text-[10px] bg-neutral-100 px-2 py-0.5 rounded border border-neutral-200 text-neutral-500 font-bold">RE-092-2026</span>
-                </div>
-                <div className="flex gap-2">
-                    <div className="flex border border-neutral-200 rounded overflow-hidden">
-                        <button className="px-3 py-1 text-[10px] font-bold bg-white border-r border-neutral-200 hover:bg-neutral-50">1D</button>
-                        <button className="px-3 py-1 text-[10px] font-bold bg-white border-r border-neutral-200 hover:bg-neutral-50">1W</button>
-                        <button className="px-3 py-1 text-[10px] font-bold bg-neutral-900 text-white">1M</button>
-                        <button className="px-3 py-1 text-[10px] font-bold bg-white hover:bg-neutral-50">ALL</button>
+        <div className="w-full min-h-screen bg-neutral-50 text-neutral-900 relative" style={{ fontFamily: "'Inter', 'DM Sans', system-ui, sans-serif" }}>
+
+            {/* Top Bar */}
+            <div className="bg-white border-b border-neutral-200 px-8 py-5 flex justify-between items-center sticky top-0 z-10">
+                <div className="flex items-center gap-6">
+                    <div>
+                        <div className="text-[10px] text-neutral-400 uppercase tracking-[0.15em] font-semibold mb-0.5">Seller Dashboard</div>
+                        <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Financial Overview</h1>
                     </div>
-                    <button className="px-3 py-1 text-[10px] font-bold bg-white border border-neutral-200 rounded flex items-center gap-1.5 hover:bg-neutral-50">
-                        <FaCalendarAlt size={10} /> Export CSV
-                    </button>
+                    {/* Timeframe filters in header */}
+                    <div className="flex items-center gap-1 ml-6 bg-neutral-100 p-1">
+                        {timeFilters.map(tf => (
+                            <button
+                                key={tf.value}
+                                onClick={() => { setTimeframe(tf.value); setPage(1); }}
+                                className={`px-3 py-1 text-[11px] font-semibold uppercase tracking-wider transition-all ${
+                                    timeframe === tf.value
+                                        ? 'bg-white text-neutral-900 border border-neutral-200'
+                                        : 'text-neutral-500 hover:text-neutral-700'
+                                }`}
+                            >
+                                {tf.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+                <button
+                    onClick={() => setShowChatbot(!showChatbot)}
+                    className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-widest border transition-all ${
+                        showChatbot
+                            ? 'bg-neutral-900 text-white border-neutral-900'
+                            : 'bg-white text-neutral-700 border-neutral-300 hover:border-neutral-600'
+                    }`}
+                >
+                    <span className="w-1.5 h-1.5 bg-current inline-block"></span>
+                    AI Assistant
+                </button>
             </div>
 
-            {/* Metric Grid - Minimalist Spreadsheet Style */}
-            <div className="grid grid-cols-4 gap-0 border border-neutral-200 bg-white mb-8 shadow-sm">
-                {[
-                    { label: 'GROSS REVENUE', value: `₹${stats.totalRevenue.toLocaleString()}`, change: '+12.5%' },
-                    { label: 'UNITS DISPATCHED', value: stats.totalUnits.toLocaleString(), change: '+8.2%' },
-                    { label: 'TOTAL ENTRIES', value: stats.dealCount, change: '+14' },
-                    { label: 'AVG DEAL VALUE', value: `₹${stats.avgValue}`, change: '-2.1%' }
-                ].map((m, i) => (
-                    <div key={i} className={`p-5 flex flex-col gap-1 ${i < 3 ? 'border-r border-neutral-200' : ''}`}>
-                        <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">{m.label}</span>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-xl font-bold tracking-tighter">{m.value}</span>
-                            <span className={`text-[9px] font-bold ${m.change.startsWith('+') ? 'text-emerald-600' : 'text-red-500'}`}>{m.change}</span>
+            <div className="px-8 py-8 flex flex-col gap-8">
+
+                {/* Metrics Row */}
+                <div className="grid grid-cols-4 gap-0 border border-neutral-200 bg-white divide-x divide-neutral-200">
+                    {metrics.map((m) => (
+                        <div key={m.label} className="px-6 py-6 flex flex-col gap-3 relative">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-400">{m.label}</span>
+                                <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-300 border border-neutral-200 px-1.5 py-0.5">{m.tag}</span>
+                            </div>
+                            {loading ? (
+                                <div className="h-8 w-32 bg-neutral-100 animate-pulse"></div>
+                            ) : (
+                                <span className="text-3xl font-bold text-neutral-900 tracking-tight tabular-nums">{m.fmt(m.value)}</span>
+                            )}
+                        </div>
+                    ))}
+                </div>
+
+                {/* Chart */}
+                <div className="bg-white border border-neutral-200">
+                    <div className="px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-widest text-neutral-600">Revenue & Profit</span>
+                        <div className="flex items-center gap-4">
+                            <span className="flex items-center gap-1.5 text-[10px] text-neutral-500 font-medium">
+                                <span className="w-2.5 h-2.5 bg-emerald-800 inline-block"></span>Revenue
+                            </span>
+                            <span className="flex items-center gap-1.5 text-[10px] text-neutral-500 font-medium">
+                                <span className="w-2.5 h-2.5 bg-emerald-400 inline-block"></span>Profit
+                            </span>
                         </div>
                     </div>
-                ))}
+                    <div className="p-6 h-72">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={data?.chartData || []} margin={{ top: 5, right: 0, left: -15, bottom: 5 }} barCategoryGap="35%">
+                                <CartesianGrid vertical={false} stroke="#f0f0f0" />
+                                <XAxis
+                                    dataKey="date"
+                                    tick={{ fontSize: 10, fill: '#000', fontFamily: 'inherit', fontWeight: 'bold' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 10, fill: '#000', fontFamily: 'inherit', fontWeight: 'bold' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    domain={[0, Math.max(10000000, (data?.metrics?.totalRevenue || 0))]}
+                                    tickFormatter={v => `₹${v >= 10000000 ? `${(v / 10000000).toFixed(1)}Cr` : v >= 100000 ? `${(v / 100000).toFixed(1)}L` : v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`}
+                                />
+                                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#fafafa' }} />
+                                <Bar dataKey="revenue" fill="#10b981" radius={0} name="Revenue" />
+                                <Bar dataKey="profit" fill="#4ade80" radius={0} name="Profit" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Table */}
+                <div className="bg-white border border-neutral-200">
+                    <div className="px-6 py-4 border-b border-neutral-100">
+                        <span className="text-xs font-bold uppercase tracking-widest text-neutral-600">Deal Records</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-neutral-50">
+                                    {['#', 'Product', 'Units', 'Price / Unit', 'Revenue', 'Buyer', 'Role', 'Location'].map(h => (
+                                        <th key={h} className="px-5 py-3 text-[9px] font-bold uppercase tracking-[0.12em] text-neutral-400 border-b border-neutral-100">
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {!data?.table?.deals?.length ? (
+                                    <tr>
+                                        <td colSpan="8" className="px-5 py-16 text-center">
+                                            <div className="flex flex-col items-center gap-2 text-neutral-300">
+                                                <p className="text-[10px] uppercase tracking-widest">No deals recorded in this timeframe</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    data.table.deals.map((deal, i) => {
+                                        const row = ((page - 1) * 10) + i + 1;
+                                        return (
+                                            <tr key={deal._id} className="border-b border-neutral-100 last:border-b-0 hover:bg-neutral-50 transition-colors group">
+                                                <td className="px-5 py-4 text-[10px] text-neutral-400 font-mono">{String(row).padStart(2, '0')}</td>
+                                                <td className="px-5 py-4 text-sm font-semibold capitalize text-neutral-900">{deal.productName}</td>
+                                                <td className="px-5 py-4 text-sm text-neutral-600 tabular-nums">{deal.units}</td>
+                                                <td className="px-5 py-4 text-sm text-neutral-600 tabular-nums font-mono">₹{deal.price.toLocaleString()}</td>
+                                                <td className="px-5 py-4 text-sm font-semibold text-neutral-900 tabular-nums font-mono">₹{(deal.price * deal.units).toLocaleString()}</td>
+                                                <td className="px-5 py-4 text-sm capitalize text-neutral-700">{deal.buyerId?.username || '—'}</td>
+                                                <td className="px-5 py-4 text-xs text-neutral-400 capitalize">{deal.buyerId?.profession || '—'}</td>
+                                                <td className="px-5 py-4 text-xs text-neutral-400">{deal.city || '—'}</td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Pagination */}
+                    {data?.table?.totalPages > 1 && (
+                        <div className="px-6 py-3 border-t border-neutral-100 flex items-center justify-between bg-neutral-50">
+                            <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-medium">
+                                {((page - 1) * 10) + 1}–{Math.min(page * 10, data.table.total)} of {data.table.total} records
+                            </span>
+                            <div className="flex items-center gap-1">
+                                <button
+                                    disabled={page === 1}
+                                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                                    className="px-3 py-1.5 text-xs border border-neutral-200 text-neutral-600 disabled:opacity-30 hover:bg-neutral-100 hover:border-neutral-300 transition-all font-medium"
+                                >
+                                    ← Prev
+                                </button>
+                                <span className="px-3 py-1.5 text-xs border border-neutral-200 bg-neutral-900 text-white font-medium">
+                                    {page}
+                                </span>
+                                <button
+                                    disabled={page === data.table.totalPages}
+                                    onClick={() => setPage(p => p + 1)}
+                                    className="px-3 py-1.5 text-xs border border-neutral-200 text-neutral-600 disabled:opacity-30 hover:bg-neutral-100 hover:border-neutral-300 transition-all font-medium"
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-12 gap-6">
-                
-                {/* Left Panel: Regional Performance */}
-                <div className="col-span-4 space-y-6">
-                    <div className="bg-white border border-neutral-200 p-5 shadow-sm">
-                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-neutral-100">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-500 flex items-center gap-2">
-                                <FaMapMarkerAlt /> Top Sales Regions
-                            </h3>
-                            <button className="text-[9px] font-bold text-neutral-400 hover:text-neutral-950 transition-colors">DETAILS</button>
+            {/* AI Chatbot Drawer */}
+            <div
+                className={`fixed top-0 right-0 h-full bg-white border-l border-neutral-200 flex flex-col z-[200] transition-all duration-300 ${
+                    showChatbot ? 'w-[400px] opacity-100' : 'w-0 opacity-0 overflow-hidden'
+                }`}
+            >
+                <div className="w-full h-auto p-5 flex items-center justify-center shrink-0 relative">
+                    <p className="text-gray-950 text-xl italic cursive">AI Assistant</p>
+                    <button onClick={() => setShowChatbot(false)} className="absolute right-5 text-gray-500 hover:text-black text-xl">×</button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-white relative">
+                    {aiMessages.length === 0 ? (
+                        <div className="w-full h-full flex items-center justify-center relative">
+                            <img src={Image} alt="AI Assistant" className="opacity-50" />
+                            <p className="absolute inset-0 flex items-center cursive justify-center text-gray-900 text-2xl text-center font-light italic">
+                                Your Financial AI<br />Ask me Anything
+                            </p>
                         </div>
-                        <div className="space-y-4">
-                            {regionalData.length > 0 ? regionalData.map((reg, idx) => (
-                                <div key={idx} className="space-y-1.5">
-                                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-tight">
-                                        <span>{reg.city}</span>
-                                        <span className="text-neutral-400">₹{(reg.val / 1000).toFixed(1)}K</span>
-                                    </div>
-                                    <div className="w-full h-1 bg-neutral-50 rounded-full overflow-hidden">
-                                        <div 
-                                            className="h-full bg-neutral-900 transition-all duration-1000" 
-                                            style={{ width: `${(reg.val / stats.totalRevenue) * 100}%` }}
-                                        />
-                                    </div>
+                    ) : (
+                        aiMessages.map((m, i) => (
+                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] px-4 py-2 text-sm whitespace-pre-wrap ${
+                                    m.role === 'user'
+                                        ? 'bg-green-950 text-white font-medium rounded-2xl'
+                                        : 'bg-white font-medium text-black'
+                                }`}>
+                                    {m.role === 'ai' ? renderMarkdown(m.content) : m.content}
                                 </div>
-                            )) : (
-                                <p className="text-[10px] italic text-neutral-300">No regional data recorded yet.</p>
-                            )}
+                            </div>
+                        ))
+                    )}
+                    {loadingAI && (
+                        <div className="flex justify-start">
+                            <div className="bg-white border border-neutral-200 shadow-sm rounded-lg px-4 py-2 text-sm italic text-gray-500 animate-pulse">Thinking...</div>
                         </div>
-                    </div>
-
-                    <div className="bg-white border border-neutral-200 p-5 shadow-sm">
-                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-neutral-100">
-                            <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-500 flex items-center gap-2">
-                                <FaChartLine /> Inventory Velocity
-                            </h3>
-                        </div>
-                        <div className="h-32 flex items-end justify-between gap-1">
-                            {[20, 45, 30, 60, 40, 80, 55, 90, 35, 70, 50, 85].map((h, i) => (
-                                <div key={i} className="flex-1 bg-neutral-100 hover:bg-neutral-900 transition-colors" style={{ height: `${h}%` }} />
-                            ))}
-                        </div>
-                        <div className="flex justify-between mt-2 text-[8px] font-bold text-neutral-300 uppercase tracking-widest">
-                            <span>SEP 25</span>
-                            <span>OCT 25</span>
-                        </div>
-                    </div>
+                    )}
+                    <div ref={aiScrollRef} />
                 </div>
 
-                {/* Right Panel: Transaction Ledger */}
-                <div className="col-span-8 bg-white border border-neutral-200 shadow-sm overflow-hidden">
-                    <div className="flex items-center justify-between p-5 bg-neutral-50 border-b border-neutral-200">
-                        <h3 className="text-[10px] font-black uppercase tracking-widest text-neutral-500 flex items-center gap-2">
-                            <FaTable /> Transaction Ledger
-                        </h3>
-                        <div className="flex gap-4 items-center">
-                            <input type="text" placeholder="Filter by product..." className="bg-white border border-neutral-200 px-3 py-1 rounded text-[9px] outline-none focus:border-neutral-400 w-48" />
-                            <span className="text-[9px] font-bold text-neutral-400">SORT BY: NEWEST</span>
-                        </div>
-                    </div>
-                    <table className="w-full text-left">
-                        <thead className="bg-neutral-50 border-b border-neutral-200">
-                            <tr>
-                                {['Date', 'Reference', 'Region', 'Units', 'Revenue', 'Status'].map(h => (
-                                    <th key={h} className="px-5 py-2.5 text-[9px] font-black text-neutral-400 uppercase tracking-widest">{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-neutral-100">
-                            {deals.length > 0 ? deals.map((deal, idx) => (
-                                <tr key={idx} className="hover:bg-neutral-50 transition-colors">
-                                    <td className="px-5 py-3 text-[10px] font-bold text-neutral-500">
-                                        {new Date(deal.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
-                                    </td>
-                                    <td className="px-5 py-3">
-                                        <div className="flex flex-col">
-                                            <span className="text-[10px] font-bold text-neutral-900 uppercase">{deal.productName}</span>
-                                            <span className="text-[8px] font-bold text-neutral-300 uppercase">ID-{deal._id.substring(deal._id.length - 6)}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-5 py-3 text-[10px] font-bold text-neutral-600 uppercase tracking-tight">{deal.city}</td>
-                                    <td className="px-5 py-3 text-[10px] font-bold text-neutral-900">{deal.units} PCS</td>
-                                    <td className="px-5 py-3 text-[10px] font-bold text-emerald-600">₹{(deal.price * deal.units).toLocaleString()}</td>
-                                    <td className="px-5 py-3">
-                                        <span className="text-[8px] font-black px-2 py-0.5 rounded border border-neutral-200 uppercase tracking-widest text-neutral-400 bg-white">
-                                            {deal.status}
-                                        </span>
-                                    </td>
-                                </tr>
-                            )) : (
-                                <tr>
-                                    <td colSpan="6" className="px-5 py-10 text-center text-[10px] font-bold text-neutral-300 italic uppercase">
-                                        No manual trade entries found in ledger.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+                <div className="w-full p-4 bg-white shrink-0">
+                    <form onSubmit={handleAiSend} className="w-full flex items-center gap-2 bg-neutral-100 border border-neutral-200 rounded-xl px-3 py-1.5">
+                        <textarea
+                            value={aiInput}
+                            onChange={e => setAiInput(e.target.value)}
+                            placeholder="Ask AI anything..."
+                            className="flex-1 h-12 bg-transparent text-sm text-gray-800 outline-none py-1.5 resize-none scrollbar-hide"
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleAiSend(e);
+                                }
+                            }}
+                        />
+                        <button
+                            type="submit"
+                            disabled={loadingAI}
+                            className="bg-emerald-950 text-white text-xs font-semibold px-4 py-2 rounded-lg hover:bg-emerald-800 transition-all disabled:opacity-50"
+                        >
+                            {loadingAI ? '...' : 'Ask'}
+                        </button>
+                    </form>
                 </div>
             </div>
-        </div>
-    )
-}
 
-export default FinancialDashboard
+        </div>
+    );
+};
+
+export default FinancialDashboard;

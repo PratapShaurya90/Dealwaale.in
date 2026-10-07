@@ -2,15 +2,15 @@ const LLM = require('../../services/LLM.js')
 
 const aiControllers = async (req, res) => {
     try {
-        const { messages } = req.body;
+        const { messages, systemInstruction } = req.body;
 
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             return res.status(400).json({ message: "Messages are required" });
         }
 
         const userPrompt = messages[messages.length - 1].content;
-        
-        const stream = await LLM(userPrompt);
+
+        const stream = await LLM(userPrompt, systemInstruction);
 
         // Set Headers for Streaming
         res.setHeader('Content-Type', 'text/plain; charset=utf-8');

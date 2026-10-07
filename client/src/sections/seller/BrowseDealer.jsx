@@ -17,12 +17,12 @@ const BrowseDealer = () => {
     const [selectedCity, setSelectedCity] = useState("")
 
     const indianCities = [
-        "Agra", "Ahmedabad", "Allahabad", "Amritsar", "Aurangabad", "Bangalore", 
-        "Bhopal", "Chandigarh", "Chennai", "Coimbatore", "Delhi", "Dhanbad", 
-        "Faridabad", "Ghaziabad", "Guwahati", "Gwalior", "Howrah", "Hyderabad", 
-        "Indore", "Jabalpur", "Jaipur", "Jodhpur", "Kanpur", "Kolkata", "Kota", 
-        "Lucknow", "Ludhiana", "Madurai", "Meerut", "Mumbai", "Nagpur", "Nashik", 
-        "Navi Mumbai", "Patna", "Pune", "Raipur", "Rajkot", "Ranchi", "Solapur", 
+        "Agra", "Ahmedabad", "Allahabad", "Amritsar", "Aurangabad", "Bangalore",
+        "Bhopal", "Chandigarh", "Chennai", "Coimbatore", "Delhi", "Dhanbad",
+        "Faridabad", "Ghaziabad", "Guwahati", "Gwalior", "Howrah", "Hyderabad",
+        "Indore", "Jabalpur", "Jaipur", "Jodhpur", "Kanpur", "Kolkata", "Kota",
+        "Lucknow", "Ludhiana", "Madurai", "Meerut", "Mumbai", "Nagpur", "Nashik",
+        "Navi Mumbai", "Patna", "Pune", "Raipur", "Rajkot", "Ranchi", "Solapur",
         "Srinagar", "Surat", "Thane", "Vadodara", "Varanasi", "Vijayawada", "Visakhapatnam"
     ];
 
@@ -144,43 +144,36 @@ const BrowseDealer = () => {
                     </div>
                 ) : (
                     dealers.map((dealer) => (
-                        <div key={dealer._id} className="w-full bg-white rounded-xl  border-2 border-neutral-300 flex flex-col md:flex-row overflow-hidden  transition-all duration-300 group">
+                        <div key={dealer._id} className="w-full bg-gradient-to-r from-white to-yellow-50/80 hover:to-yellow-100/80 rounded-xl border-2 border-neutral-300 flex flex-col md:flex-row overflow-hidden transition-all duration-300 group relative">
                             {/* Left Section (The Ticket Info) */}
                             <div className="flex-1 flex-col   flex p-6  gap-3">
                                 <div className="w-full gap-3 ">
-                                    <div className="flex items-center gap-4 flex-wrap">
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="text-2xl font-bold text-neutral-900 uppercase tracking-tight">{dealer.username}</h3>
-                                            {dealer.subscriptionType === 'pro' && (
-                                                <span className="flex items-center gap-1 bg-yellow-400/20 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border border-yellow-400/30">
-                                                    <FaStar className="text-[8px]" /> Verified
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <h3 className="text-2xl font-bold text-neutral-900 uppercase tracking-tight">{dealer.username}</h3>
+                                        {dealer.subscriptionType === 'pro' && (
+                                            <span className="flex items-center gap-1 bg-yellow-400/20 text-yellow-700 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border border-yellow-400/30">
+                                                <FaStar className="text-[8px]" /> Verified
+                                            </span>
+                                        )}
+                                        <span className="px-3 py-1 bg-neutral-50 border border-neutral-200 rounded-lg text-[10px] font-bold text-neutral-600 uppercase tracking-wide">
+                                            {dealer.profession}
+                                        </span>
+                                        {dealer.categories && dealer.categories.length > 0 && (
+                                            dealer.categories.map((cat, idx) => (
+                                                <span key={idx} className="px-3 py-1 bg-emerald-50 border border-emerald-200 rounded-lg text-[10px] font-bold text-emerald-700 uppercase tracking-wide">
+                                                    {cat}
                                                 </span>
-                                            )}
-                                        </div>
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            {dealer.categories && dealer.categories.length > 0 ? (
-                                                dealer.categories.map((cat, idx) => (
-                                                    <span key={idx} className="px-3 py-1 bg-neutral-50 border border-neutral-200 rounded-lg text-[10px] font-bold text-neutral-600 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-200 transition-all duration-300 uppercase tracking-wide">
-                                                        {cat}
-                                                    </span>
-                                                ))
-                                            ) : (
-                                                <span className="px-3 py-1 bg-neutral-50 border border-neutral-200 rounded-lg text-[10px] font-bold text-neutral-600 uppercase tracking-wide">
-                                                    {dealer.profession}
-                                                </span>
-                                            )}
-                                        </div>
+                                            ))
+                                        )}
                                     </div>
                                     <div>
-                                        <span className="font-light text-gray-400">{dealer.role} X </span>
-                                        <span className="font-light text-gray-400">{dealer.profession}</span>
-
+                                        <span className="font-light text-gray-400 capitalize">{dealer.role}</span>
                                     </div>
 
                                 </div>
                                 <div>
-                                    <p className="text-neutral-600 font-normal mx-2 line-clamp-3">
-                                        {dealer.about || "This dealer hasn't provided an introduction yet. Connect to learn more about their offerings and expertise."}
+                                    <p className="text-neutral-600 font-normal mx-2 line-clamp-3 whitespace-pre-wrap">
+                                        {dealer.about || "This dealer hasn't provided a business introduction yet. Connect to learn more about their offerings and expertise."}
                                     </p>
                                 </div>
 
@@ -189,10 +182,6 @@ const BrowseDealer = () => {
                                     <div className="flex items-center gap-1.5 text-neutral-500 text-sm">
                                         <span className="font-semibold text-neutral-400">City:</span>
                                         <span className="text-neutral-700 font-medium">{dealer.city}</span>
-                                        <span className="text-neutral-300 font-bold mx-2">•</span>
-
-                                        <label htmlFor="" className="font-semibold text-neutral-400">Phone:</label>
-                                        <span className="text-neutral-700 font-medium">{dealer.phone}</span>
                                         <span className="text-neutral-300 font-bold mx-2">•</span>
 
                                         <label htmlFor="" className="font-semibold text-neutral-400">Email:</label>

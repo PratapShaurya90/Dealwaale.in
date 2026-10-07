@@ -156,10 +156,16 @@ const Profile = () => {
 
             {/* Quick Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-6 border-b border-neutral-100">
-                <div className="bg-emerald-50/50 rounded-xl p-4 flex items-center gap-4 border border-emerald-100/50">
-                    <div>
-                        <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Connections</p>
-                        <h4 className="text-2xl font-extrabold text-emerald-950">{connectedCount} <span className="text-sm font-medium text-gray-600">People</span></h4>
+                <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-bold text-gray-600 uppercase">Total Connections</label>
+                    <div className="relative">
+                        <FaUser className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600 text-sm" />
+                        <input
+                            type="text"
+                            value={`${connectedCount} People`}
+                            disabled
+                            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-neutral-200 rounded-xl text-sm font-bold text-emerald-950 cursor-default"
+                        />
                     </div>
                 </div>
             </div>

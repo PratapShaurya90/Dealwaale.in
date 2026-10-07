@@ -41,8 +41,18 @@ const ticketBase = new mongoose.Schema({
     supplyType:{
         type:String,
         required:true
+    },
+    units: {
+        type: Number,
+        default: 0
+    },
+    city: {
+        type: String,
+        default: ""
     }
 
-})
+}, { timestamps: true })
+
+ticketBase.index({ createdAt: 1 }, { expireAfterSeconds: 1814400 })
 
 module.exports = mongoose.model("TicketBase",ticketBase)
